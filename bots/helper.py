@@ -11,7 +11,6 @@ def num_tiles_in_range(map: Map):
     bomber_tiles = np.zeros(shape=(map.width, map.height), dtype=int)
     for tile in map.path:
         x, y = tile
-        print(tile)
         for tower_x in range(x - GUNX, x + GUNX + 1):
             for tower_y in range(y - GUNY, y + GUNY + 1):
                 if not map.is_space(tower_x, tower_y):
@@ -54,6 +53,9 @@ def reinf_value(tower_tiles, num_towers, map):
 
     return reinf_val
 
+def optimal_tower(tower_tiles):
+    tile = np.unravel_index(np.argmax(tower_tiles), tower_tiles.shape)
+    return tile
 
 # Gunship DPS: 25/20 = 1.25 per tick
 # Bomber DPS: 6/15   = 0.40 per tick
