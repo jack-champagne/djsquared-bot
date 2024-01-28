@@ -36,9 +36,12 @@ def arena_builder(player_paths):
     player_combinations = [
         (get_player_name_and_path(ppath1), get_player_name_and_path(ppath2), map_inst) for ((ppath1, ppath2), map_inst) in itertools.product(itertools.combinations_with_replacement(player_paths, 2), maps) ]
     print(len(player_combinations))
+
+    working_opps = ["defense_farmer", "cane_farmer", "azazel", "balthazar_farmer"]
     filtered_player_combos = list(filter(lambda e: e[1][1][0] == 'dingo_farmer' or e[1][0][0] == 'dingo_farmer', enumerate(player_combinations)))
+    filtered_opponents_that_work = list(filter(lambda x: x[1][0][0] not in working_opps or x[1][1][0] not in working_opps), filtered_player_combos)
     with Pool(12) as p:
-        return p.map(execute_game_and_output, filtered_player_combos)
+        return p.map(execute_game_and_output, filtered_opponents_that_work)
 
 
 def execute_game_and_output(player_combination):
