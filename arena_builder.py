@@ -43,7 +43,7 @@ def arena_builder(player_paths):
     for (i ,(p1_name, p2_name, game)) in enumerate(games):
         print(f"Match {i+1}: {p1_name} vs. {p2_name}", end='')
         winner = game.run_game()
-        print(f"- winner: {'p1' + p1_name if winner == Team.BLUE else 'p2' + p2_name}")
+        print(f"- winner: {'p1:' + p1_name if winner == Team.BLUE else 'p2:' + p2_name}")
         results.append({"player1": p1_name, "player2": p2_name, "winner": winner, "turns": game.gs.turn })
         del(game)
     return results
