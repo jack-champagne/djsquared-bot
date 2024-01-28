@@ -40,8 +40,7 @@ def arena_builder(player_paths):
         in player_combinations
     ]
 
-    with Pool(12) as p:
-        p.map(execute_game_and_output, enumerate(games))
+    map(execute_game_and_output, enumerate(games))
 
 
 def execute_game_and_output(game_tuple):
