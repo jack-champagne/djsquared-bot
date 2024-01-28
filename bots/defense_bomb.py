@@ -17,6 +17,7 @@ class BotPlayer(Player):
         self.desired_debris_health = IDEAL_HEALTH
         gunship_tiles, bomber_tiles = num_tiles_in_range(self.map)
         self.gunship_tiles = gunship_tiles
+        self.bomber_tiles = bomber_tiles
 
     def play_turn(self, rc: RobotController):
         # if rc.get_turn() == 1:
@@ -31,12 +32,12 @@ class BotPlayer(Player):
             # print(self.gun_ratio*reinf_gunship_tiles + (1-self.gun_ratio)*reinf_bomber_tiles)
 
         if rc.get_balance(rc.get_ally_team()) >= TowerType.BOMBER.cost:
-            gunship_x, gunship_y = optimal_tower(self.gunship_tiles)
+            gunship_x, gunship_y = optimal_tower(self.bomber_tiles)
             gunship_x, gunship_y = int(gunship_x), int(gunship_y)
             if rc.can_build_tower(TowerType.BOMBER, gunship_x, gunship_y):
                 rc.build_tower(TowerType.BOMBER, gunship_x, gunship_y)
                 # Prevent future placements on this tile
-                self.gunship_tiles[gunship_x, gunship_y] = 0
+                self.bomber_tiles[gunship_x, gunship_y] = 0
             else:
                 print("fail")
                 raise Exception
