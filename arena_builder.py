@@ -36,11 +36,7 @@ def arena_builder(player_paths):
     player_combinations = [
         (get_player_name_and_path(ppath1), get_player_name_and_path(ppath2), map_inst) for ((ppath1, ppath2), map_inst) in itertools.product(itertools.combinations_with_replacement(player_paths, 2), maps) ]
     print(len(player_combinations))
-    for e in enumerate(player_combinations):
-        print(e[1][1][0])
-
-    filtered_player_combos = list(filter(lambda e: e[1][1][0] == 'dingo_farmer', enumerate(player_combinations)))
-
+    filtered_player_combos = list(filter(lambda e: e[1][1][0] == 'dingo_farmer' or e[1][0][0] == 'dingo_farmer', enumerate(player_combinations)))
     with Pool(12) as p:
         return p.map(execute_game_and_output, filtered_player_combos)
 
