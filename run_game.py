@@ -33,6 +33,7 @@ def main():
     )
     winner = game.run_game()
     print(f"Winner: {winner}")
+    print(f"Turns: {game.gs.turn}")
 
 if __name__ == "__main__":
     main()

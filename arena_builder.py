@@ -49,7 +49,7 @@ def arena_builder(player_paths):
     return results
 
 def main():
-    player_paths = ["bots/azazel.py", "bots/balthazar_farmer.py", "bots/defense_bot.py", "bots/defense_bomb.py"]
+    player_paths = ["bots/azazel.py", "bots/balthazar_farmer.py", "bots/defense_bot.py", "bots/defense_bomb.py", "bots/cane_farmer.py"]
     results = arena_builder(player_paths)
 
     player_names = [os.path.basename(p_path).split(".")[0] for p_path in player_paths]
