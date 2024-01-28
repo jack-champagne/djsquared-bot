@@ -6,9 +6,9 @@ from src.player import Player
 from src.map import Map
 
 '''
-Dingo
+Dingo Mk. 2
 
-Both Balthazar and Cane
+Both Balthazar and Cane, but not dumb enough to stand there and die
 '''
 
 def optimal_tower(tower_tiles):
@@ -65,6 +65,7 @@ class BotPlayer(Player):
         self.ratio_sum = gun_rate + bomb_rate
 
         self.offense_mode = False
+        self.tip_scale = 0
 
     def get_next_farm(self, rc: RobotController):
         x, y = self.farm
@@ -97,15 +98,21 @@ class BotPlayer(Player):
                 rc.auto_bomb(tower.id)
 
     def play_turn(self, rc: RobotController):
+        # If opponent is trying to rush, just sit and turtle
+
         if self.offense_mode:
-            self.do_offense_strat(rc)
+            if len(rc.get_towers(rc.get_enemy_team())) == 0:
+                self.offense_mode = False
+                self.do_defense_strat(rc)
+            else:
+                self.do_offense_strat(rc)
         else:
             self.do_defense_strat(rc)
         self.towers_attack(rc)
 
     def do_defense_strat(self, rc: RobotController):
         num_towers = len(rc.get_towers(rc.get_ally_team()))
-        if num_towers % self.ratio_sum < self.gun_rate:
+        if num_towers < self.tip_scale or num_towers % self.ratio_sum < self.gun_rate:
             if rc.get_balance(rc.get_ally_team()) >= TowerType.GUNSHIP.cost:
                 gunship_x, gunship_y = optimal_tower(self.gunship_tiles)
                 gunship_x, gunship_y = int(gunship_x), int(gunship_y)
@@ -132,6 +139,10 @@ class BotPlayer(Player):
 
                     if num_towers > 0 and (num_towers+1) % self.ratio_sum == 0:
                         self.offense_mode = True
+
+        if rc.get_turn() >= 50 and rc.get_turn() % 50 == 0 and len(rc.get_towers(rc.get_enemy_team())) == 0:
+            self.tip_scale += 10
+
 
     def do_offense_strat(self, rc: RobotController):
         if rc.get_turn() == 0:
