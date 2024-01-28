@@ -58,7 +58,7 @@ def main():
     
     victory_matrix = np.zeros([len(player_names), len(player_names)])
     for result in results:
-        if result["winner"] == Team.RED:
+        if result["winner"] == Team.BLUE:
             victory_matrix[player_names.index(result["player1"]),player_names.index(result["player2"])] += 1
         else:
             victory_matrix[player_names.index(result["player2"]),player_names.index(result["player1"])] += 1
