@@ -40,6 +40,9 @@ MINIMUM_HEALTH = 24
 GAPFILL = 7
 CLUSTER_SIZE = 20
 
+BOMBER_DPS = 0.4
+BOMBER_DAMAGE = 6
+
 class BotPlayer(Player):
 
     def __init__(self, map: Map):
@@ -67,7 +70,8 @@ class BotPlayer(Player):
                     tb += self.bomber_tiles[tower.x, tower.y]
                     nbombs += 1
 
-            self.desired_health = max(MINIMUM_HEALTH, 0.4 * tb + GAPFILL)
+            self.desired_health = max(MINIMUM_HEALTH,
+                                      BOMBER_DAMAGE*np.ceil((BOMBER_DPS * tb)/BOMBER_DAMAGE) + GAPFILL)
             self.sending = self.cluster_size
 
         if self.sending > 0:
