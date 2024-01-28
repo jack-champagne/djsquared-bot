@@ -75,7 +75,7 @@ class BotPlayer(Player):
             self.sending = self.cluster_size
 
         if self.sending > 0:
-            if rc.can_send_debris(1, self.desired_health) and rc.get_balance(rc.get_ally_team()) >= rc.get_debris_cost(1, self.desired_health) * self.sending:
+            if rc.get_balance(rc.get_ally_team()) >= rc.get_debris_cost(1, self.desired_health) * self.sending:
                 rc.send_debris(1, self.desired_health)
                 self.sending -= 1
 
