@@ -6,9 +6,9 @@ from src.player import Player
 from src.map import Map
 
 '''
-Azazel Mk. 3
+Azazel Mk. 4
 
-Sends a doom-wave of scrap
+Sends a doom-wave of scrap (but smarter)
 '''
 
 def num_tiles_in_range(map: Map):
@@ -37,7 +37,8 @@ def num_tiles_in_range(map: Map):
     return (gunship_tiles, bomber_tiles)
 
 MINIMUM_HEALTH = 24
-GAPFILL = 5
+GAPFILL = 7
+CLUSTER_SIZE = 20
 
 class BotPlayer(Player):
 
@@ -46,22 +47,32 @@ class BotPlayer(Player):
         self.gunship_tiles, self.bomber_tiles = num_tiles_in_range(self.map)
         self.enemy_towers = 0
         self.desired_health = MINIMUM_HEALTH
+        self.cluster_size = CLUSTER_SIZE
+        self.sending = 0
 
     def play_turn(self, rc: RobotController):
         towers = rc.get_towers(rc.get_enemy_team())
-        if len(towers) != self.enemy_towers:
+        if len(towers) != self.enemy_towers and self.sending == 0:
             # Recompute health if cached value is incorrect
             tg = 0
+            nguns = 0
             tb = 0
+            nbombs = 0
 
             for tower in towers:
                 if tower.type == TowerType.GUNSHIP:
                     tg += self.gunship_tiles[tower.x, tower.y]
+                    nguns += 1
                 elif tower.type == TowerType.BOMBER:
-                    tg += self.bomber_tiles[tower.x, tower.y]
+                    tb += self.bomber_tiles[tower.x, tower.y]
+                    nbombs += 1
 
-            self.desired_health = min(MINIMUM_HEALTH, 1.25 * tg + 0.4 * tb + GAPFILL)
-        
-        if rc.can_send_debris(1, self.desired_health):
-            rc.send_debris(1, self.desired_health)
+            self.desired_health = max(MINIMUM_HEALTH, 0.4 * tb + GAPFILL)
+            self.sending = self.cluster_size
+
+        if self.sending > 0:
+            if rc.get_balance(rc.get_ally_team()) >= rc.get_debris_cost(1, self.desired_health) * self.sending:
+                rc.send_debris(1, self.desired_health)
+                self.sending -= 1
+
         # otherwise do nothing
