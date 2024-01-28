@@ -193,5 +193,6 @@ class Game:
             self.replay.add_turn(self.gs)
             if winner is not None:
                 self.replay.set_winner(winner)
-                self.replay.write_json()
+                if self.replay:
+                    self.replay.write_json()
                 return winner
