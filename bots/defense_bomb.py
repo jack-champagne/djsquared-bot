@@ -46,7 +46,7 @@ class BotPlayer(Player):
     def towers_attack(self, rc: RobotController):
         towers = rc.get_towers(rc.get_ally_team())
         for tower in towers:
-            if tower.type == TowerType.BOMBER:
+            if tower.type == TowerType.GUNSHIP:
                 rc.auto_snipe(tower.id, SnipePriority.FIRST)
             elif tower.type == TowerType.BOMBER:
                 rc.auto_bomb(tower.id)
