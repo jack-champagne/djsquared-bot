@@ -32,6 +32,7 @@ class BotPlayer(Player):
 
         if rc.get_balance(rc.get_ally_team()) >= TowerType.GUNSHIP.cost:
             gunship_x, gunship_y = optimal_tower(self.gunship_tiles)
+            gunship_x, gunship_y = int(gunship_x), int(gunship_y)
             if rc.can_build_tower(TowerType.GUNSHIP, gunship_x, gunship_y):
                 rc.build_tower(TowerType.GUNSHIP, gunship_x, gunship_y)
                 # Prevent future placements on this tile
@@ -39,6 +40,16 @@ class BotPlayer(Player):
             else:
                 print("fail")
                 raise Exception
+        
+        self.towers_attack(rc)
+        
+    def towers_attack(self, rc: RobotController):
+        towers = rc.get_towers(rc.get_ally_team())
+        for tower in towers:
+            if tower.type == TowerType.GUNSHIP:
+                rc.auto_snipe(tower.id, SnipePriority.FIRST)
+            elif tower.type == TowerType.BOMBER:
+                rc.auto_bomb(tower.id)
 
         # if rc.can_send_debris(1, self.desired_debris_health):
             # rc.send_debris(1, self.desired_debris_health)
