@@ -127,14 +127,12 @@ class BotPlayer(Player):
                 min_corner = corner
                 min_val = self.reinf_tiles[corner[0], corner[1]]
         self.cur_farm_reinf = min_corner
-        print("next corner: ", min_corner)
         if min_corner is None:
             return
         
         self.farm_reinf_boundary.remove(min_corner)
         self.set_farm_cluster(min_corner, rc)
         self.get_new_farm_locs(min_corner, rc)
-        print("new farm locs", self.farm_tiles)
 
     def init_farm_cluster(self, rc):
         min_reinf = 1000
@@ -146,7 +144,6 @@ class BotPlayer(Player):
                         min_reinf = self.reinf_tiles[x, y]
                         tile = (x, y)
         self.set_farm_cluster(tile, rc)
-        print("starting tile: ", tile)
         if tile:
             self.next_farm_reinf(rc)
         
@@ -178,7 +175,6 @@ class BotPlayer(Player):
                         tile = (x, y)
         if rc.get_balance(rc.get_ally_team()) >= TowerType.SOLAR_FARM.cost:
             tower_x, tower_y = tile
-            print("fallback farm tile", tower_x, tower_y)
             if rc.can_build_tower(TowerType.SOLAR_FARM, tower_x, tower_y):
                 rc.build_tower(TowerType.SOLAR_FARM, tower_x, tower_y)
 
@@ -203,7 +199,6 @@ class BotPlayer(Player):
             else:
                 tower_x, tower_y = self.cur_farm_reinf
                 if rc.can_build_tower(TowerType.REINFORCER, tower_x, tower_y):
-                    print("placing reinf tile")
                     rc.build_tower(TowerType.REINFORCER, tower_x, tower_y)
                     self.cur_farm_reinf = None
         else:
@@ -283,14 +278,13 @@ class BotPlayer(Player):
             if num_farms > num_enemy_farms:
                 self.sell_farms(num_enemy_farms, rc)
             self.mode = BotMode.ATTACKING
-            print("switch to attacking - sending single", self.sending_health, tg, tb)
         elif total_value >= cluster_cost:
             self.sending_health = self.desired_health
             self.sending = CLUSTER_SIZE
             if num_farms > num_enemy_farms:
                 self.sell_farms(num_enemy_farms, rc)
             self.mode = BotMode.ATTACKING
-            print("switch to attacking - sending cluster", self.sending_health)
+        
     
     def get_defense_power(self, rc: RobotController):
         towers = rc.get_towers(rc.get_ally_team())
@@ -331,7 +325,6 @@ class BotPlayer(Player):
                 self.sending -= 1
         if self.sending == 0:
             # self.offense_mode = False
-            print("switch to farming")
             self.mode = BotMode.FARMING
 
     def do_defense_strat(self, rc: RobotController):
@@ -380,11 +373,9 @@ class BotPlayer(Player):
             # Debris analysis
             cluster_health, single_health, debris_life = self.get_defense_power(rc)
             if debris_life > single_health:
-                print("switch to defending")
                 self.mode = BotMode.DEFENDING
             if num_farms * TowerType.SOLAR_FARM.cost >= enemy_value and cluster_health < 30 * np.sqrt(1 + 0.2*num_enemy_farms):
                 # Source is that I made it up 
-                print("switch to defending")
                 self.mode = BotMode.DEFENDING        
             if self.mode == BotMode.FARMING:
                 self.check_offense_power(num_farms, num_enemy_farms, rc)
@@ -397,15 +388,11 @@ class BotPlayer(Player):
     def play_turn(self, rc: RobotController):
         if rc.get_turn() == 1:
             gunship_tiles, bomber_tiles = num_tiles_in_range(self.map)
-            print("Gunship:")
-            print(gunship_tiles)
-            print("Bomber:")
-            print(bomber_tiles)
+            
             reinf_gunship_tiles = reinf_value(gunship_tiles, NUM_TOWERS_PER_REINF, self.map)
             reinf_bomber_tiles = reinf_value(bomber_tiles, NUM_TOWERS_PER_REINF, self.map)
-            print("Reinforcement at 1-to-1 ratio:")
             self.reinf_tiles = (self.gun_rate*reinf_gunship_tiles + self.bomb_rate*reinf_bomber_tiles) / self.ratio_sum
-            print(self.reinf_tiles)
+
 
             # Init the starting farm location
             self.init_farm_cluster(rc)
@@ -419,7 +406,6 @@ class BotPlayer(Player):
                     self.num_towers += 1
             
                     if self.num_towers >= 5:
-                        print("switch to farming")
                         self.mode = BotMode.FARMING
             
         # When to build farms?
