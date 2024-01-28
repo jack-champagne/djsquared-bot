@@ -327,6 +327,7 @@ class BotPlayer(Player):
         #                             (BOMBER_DAMAGE*np.ceil(self.bomber_strike_mult) + 
         #                             GUNSHIP_DAMAGE*np.ceil(self.gunship_strike_mult)) + GAPFILL)
 
+
         # Calculate the cheaper option
         # single_cost = rc.get_debris_cost(1, self.single_health)
         # single_damage_per_cost = self.single_health / single_cost
