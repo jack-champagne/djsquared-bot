@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-# import compress_json
+import compress_json
 from src.game_constants import Team, TowerType
 from src.game_state import GameState
 from src.map import Map
