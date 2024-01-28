@@ -165,16 +165,15 @@ class BotPlayer(Player):
                     tb += self.base_bomber_tiles[tower.x, tower.y]
                     nbombs += 1
 
-            self.desired_health = max(MINIMUM_HEALTH,
-                                      BOMBER_DAMAGE*np.ceil((BOMBER_DPS * tb)/BOMBER_DAMAGE) + GAPFILL)
+            self.desired_health = int(max(MINIMUM_HEALTH,
+                                      BOMBER_DAMAGE*np.ceil((BOMBER_DPS * tb)/BOMBER_DAMAGE) + GAPFILL))
             self.sending = self.cluster_size
 
         if self.sending > 0:
             total_val = rc.get_balance(rc.get_ally_team()) + self.num_farms * 0.8 * TowerType.SOLAR_FARM.cost
             if total_val >= rc.get_debris_cost(1, self.desired_health) * self.sending:
                 self.sell_farms(rc)
-                if rc.can_send_debris(1, self.desired_health):
-                    rc.send_debris(1, self.desired_health)
+                rc.send_debris(1, self.desired_health)
                 self.sending -= 1
 
                 if self.sending == 0:
