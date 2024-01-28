@@ -6,6 +6,7 @@ from src.map import Map
 from src.game_constants import Team, TowerType
 from src.tower import Tower
 from src.debris import Debris
+import time
 
 # python replay_game.py <mapname>.awap24r [--web]
 WEB_MODE = False
@@ -110,3 +111,5 @@ for turn in replay['turns']:
     except:
         print("PyGame may not be compatible with your system. Try running the replay with the --web flag.")
         exit()
+    
+time.sleep(5000)
