@@ -358,7 +358,8 @@ class BotPlayer(Player):
             cluster_damage_per_cost = 0.5 * self.desired_health / cluster_cost
         total_value = rc.get_balance(rc.get_ally_team())
         total_value += self.get_total_value(rc) * 0.8
-        if (cluster_damage_per_cost * cluster_cost * int(total_value / cluster_cost) >= rc.get_health(rc.get_enemy_team())):
+        if (cluster_damage_per_cost * cluster_cost * int(total_value / cluster_cost) >= rc.get_health(rc.get_enemy_team())
+            and cluster_damage_per_cost * cluster_cost * int(total_value / cluster_cost) >= 500):
             self.sending_health = self.desired_health
             self.sending = int(total_value / cluster_cost)
             self.sell_all(rc)
@@ -373,8 +374,8 @@ class BotPlayer(Player):
                 and CLUSTER_SIZE * 0.5 * self.desired_health >= 1250):
                 self.sending_health = int(self.desired_health)
                 self.sending = CLUSTER_SIZE
-                if num_farms > num_enemy_farms:
-                    self.sell_farms(num_enemy_farms, rc)
+                # if num_farms > num_enemy_farms:
+                #     self.sell_farms(num_enemy_farms, rc)
                 self.mode = BotMode.ATTACKING
                 # print("switch to attacking - sending cluster", self.sending_health)
 
@@ -426,7 +427,7 @@ class BotPlayer(Player):
     def do_offense_strat(self, rc: RobotController):
         if self.sending > 0:
             if rc.get_balance(rc.get_ally_team()) < rc.get_debris_cost(1, self.sending_health):
-                # Sell one
+                # Sell farm
                 self.sell_farms(self.get_num_farms() - 1, rc)
             if rc.get_balance(rc.get_ally_team()) >= rc.get_debris_cost(1, self.sending_health):   
                 rc.send_debris(1, self.sending_health)
