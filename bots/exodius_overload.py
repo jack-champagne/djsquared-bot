@@ -100,7 +100,7 @@ class BotPlayer(Player):
         # STARTING metrics
         self.num_towers = 0
 
-        self.gun_rate = 8
+        self.gun_rate = 6
         self.bomb_rate = 2
         self.ratio_sum = self.gun_rate + self.bomb_rate
 
@@ -414,8 +414,8 @@ class BotPlayer(Player):
         debris_life = 0
         for debris in all_debris:
             # Sample stuff in front
-            if ((debris.progress < 15 and debris.total_cooldown <= 2)
-                or (debris.progress >= self.map.path_length - 15 and debris.total_cooldown > 2)):
+            if ((debris.progress < 15 and (debris.total_cooldown <= 2 or debris.total_health >= 50))
+                or (debris.progress >= self.map.path_length - 15 and not(debris.total_cooldown <= 2 or debris.total_health >= 50))):
                 # Remove 50% bomber damage from health
                 debris_life += max(0, (debris.health / debris.total_cooldown) - cluster_health * 0.9)
         debris_life *= self.map.path_length / 15
@@ -451,7 +451,7 @@ class BotPlayer(Player):
                 tb += self.base_bomber_tiles[tower.x, tower.y]
                 nbombs += 1
         
-        if tb * self.gun_rate * 4 >= self.bomb_rate * tg:
+        if (tb + np.max(self.bomber_tiles)) * self.gun_rate * 4 >= self.bomb_rate * tg:
             if rc.get_balance(rc.get_ally_team()) >= TowerType.GUNSHIP.cost:
                 gunship_x, gunship_y = self.optimal_tower(self.gunship_tiles, rc)
                 gunship_x, gunship_y = int(gunship_x), int(gunship_y)
