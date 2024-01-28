@@ -30,8 +30,12 @@ def get_player_name_and_path(fstr):
     return (os.path.basename(fstr).split(".")[0], fstr)
 
 def arena_builder(player_paths):
-    map_paths: list[str] = ["maps/three_disjoint_paths.awap24m", "maps/temple.awap24m", "maps/hilbert.awap24m", "maps/squig.awap24m", "maps/simple_map1.awap24m"]
-    
+#    map_paths: list[str] = ["maps/three_disjoint_paths.awap24m"]
+#    map_paths += ["maps/temple.awap24m"]
+    map_paths = ["maps/hilbert.awap24m"]
+#    map_paths += [ "maps/squig.awap24m" ]
+#    map_paths += [ "maps/simple_map1.awap24m"]
+ 
     maps = [Map(mpath)for mpath in map_paths]
     player_combinations = [
         (get_player_name_and_path(ppath1), get_player_name_and_path(ppath2), map_inst) for ((ppath1, ppath2), map_inst) in itertools.product(itertools.combinations_with_replacement(player_paths, 2), maps) ]
@@ -61,7 +65,7 @@ def main():
     player_names = [os.path.basename(p_path).split(".")[0] for p_path in player_paths]
 
     print(f"ordering: {[ e for e in enumerate(player_names)]})")
-    
+
     victory_matrix = np.zeros([len(player_names), len(player_names)])
     for result in results:
         if result["winner"] == Team.BLUE:
