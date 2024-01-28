@@ -562,9 +562,6 @@ class BotPlayer(Player):
         towers = rc.get_towers(rc.get_ally_team())
         for tower in towers:
             if tower.type == TowerType.GUNSHIP:
-                if tower.id % 3 == 2:
-                    rc.auto_snipe(tower.id, SnipePriority.STRONG)
-                else:
-                    rc.auto_snipe(tower.id, SnipePriority.FIRST) # TODO: target enemy with highest current hp
+                rc.auto_snipe(tower.id, SnipePriority.FIRST) # TODO: target enemy with highest current hp
             elif tower.type == TowerType.BOMBER:
                 rc.auto_bomb(tower.id)
