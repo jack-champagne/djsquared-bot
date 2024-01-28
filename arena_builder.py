@@ -30,14 +30,14 @@ def get_player_name_and_path(fstr):
     return (os.path.basename(fstr).split(".")[0], fstr)
 
 def arena_builder(player_paths):
-    map_paths: list[str] = ["maps/biki_bott.awap24m", "maps/line.awap24m", "maps/three_disjoint_paths.awap24m"]
+    map_paths: list[str] = ["maps/three_disjoint_paths.awap24m", "maps/temple.awap24m", "maps/hilbert.awap24m", "maps/squig.awap24m", "maps/simple_map1.awap24m"]
     
     maps = [Map(mpath)for mpath in map_paths]
     player_combinations = [
         (get_player_name_and_path(ppath1), get_player_name_and_path(ppath2), map_inst) for ((ppath1, ppath2), map_inst) in itertools.product(itertools.combinations_with_replacement(player_paths, 2), maps) ]
     print(len(player_combinations))
 
-    with Pool(12) as p:
+    with Pool(11) as p:
         return p.map(execute_game_and_output, enumerate(player_combinations))
 
 
@@ -52,7 +52,7 @@ def execute_game_and_output(player_combination):
     return {"player1": p1_name, "player2": p2_name, "winner": winner, "turns": game.gs.turn }
 
 def main():
-    player_paths = ["bots/azazel.py", "bots/balthazar_farmer.py", "bots/defense_bot.py", "bots/defense_bomb.py", "bots/cane_farmer.py"]
+    player_paths = ["bots/azazel.py", "bots/balthazar_farmer.py", "bots/defense_bot.py", "bots/defense_bomb.py", "bots/cane_farmer.py", "bots/dingo_farmer.py", "bots/defense_farmer.py"]
     results = arena_builder(player_paths)
 
     player_names = [os.path.basename(p_path).split(".")[0] for p_path in player_paths]
