@@ -87,6 +87,7 @@ class BotPlayer(Player):
         self.base_bomber_tiles = bomber_tiles.copy()
         self.gunship_tiles = gunship_tiles
         self.bomber_tiles = bomber_tiles
+        self.gunship_strike_mult, self.bomber_strike_mult = self.get_strike_mult()
 
         self.cur_reinfs = set()
         self.cur_farm_reinf = None
@@ -97,7 +98,7 @@ class BotPlayer(Player):
         # STARTING metrics
         self.num_towers = 0
 
-        self.gun_rate = 2
+        self.gun_rate = 8
         self.bomb_rate = 2
         self.ratio_sum = self.gun_rate + self.bomb_rate
 
@@ -127,14 +128,14 @@ class BotPlayer(Player):
                 min_corner = corner
                 min_val = self.reinf_tiles[corner[0], corner[1]]
         self.cur_farm_reinf = min_corner
-        print("next corner: ", min_corner)
+        # print("next corner: ", min_corner)
         if min_corner is None:
             return
         
         self.farm_reinf_boundary.remove(min_corner)
         self.set_farm_cluster(min_corner, rc)
         self.get_new_farm_locs(min_corner, rc)
-        print("new farm locs", self.farm_tiles)
+        # print("new farm locs", self.farm_tiles)
 
     def init_farm_cluster(self, rc):
         min_reinf = 1000
@@ -146,7 +147,7 @@ class BotPlayer(Player):
                         min_reinf = self.reinf_tiles[x, y]
                         tile = (x, y)
         self.set_farm_cluster(tile, rc)
-        print("starting tile: ", tile)
+        # print("starting tile: ", tile)
         if tile:
             self.next_farm_reinf(rc)
         
@@ -178,7 +179,7 @@ class BotPlayer(Player):
                         tile = (x, y)
         if rc.get_balance(rc.get_ally_team()) >= TowerType.SOLAR_FARM.cost:
             tower_x, tower_y = tile
-            print("fallback farm tile", tower_x, tower_y)
+            # print("fallback farm tile", tower_x, tower_y)
             if rc.can_build_tower(TowerType.SOLAR_FARM, tower_x, tower_y):
                 rc.build_tower(TowerType.SOLAR_FARM, tower_x, tower_y)
 
@@ -203,7 +204,7 @@ class BotPlayer(Player):
             else:
                 tower_x, tower_y = self.cur_farm_reinf
                 if rc.can_build_tower(TowerType.REINFORCER, tower_x, tower_y):
-                    print("placing reinf tile")
+                    # print("placing reinf tile")
                     rc.build_tower(TowerType.REINFORCER, tower_x, tower_y)
                     self.cur_farm_reinf = None
         else:
@@ -227,6 +228,20 @@ class BotPlayer(Player):
             if tower.type == TowerType.SOLAR_FARM:
                 num_farms += 1
         return num_farms
+    
+    def get_total_value(self, rc):
+        value = 0
+        for tower in rc.get_towers(rc.get_ally_team()):
+            value += tower.type.cost
+        return value
+    
+    def sell_all(self, rc: RobotController):
+        towers = rc.get_towers(rc.get_ally_team())
+        for tower in towers:
+            if tower.type == TowerType.SOLAR_FARM:
+                # Add farm spot into farm_tiles
+                self.farm_tiles.add((tower.x, tower.y))
+            rc.sell_tower(tower.id)
 
     def sell_farms(self, target, rc: RobotController):
         towers = rc.get_towers(rc.get_ally_team())
@@ -237,12 +252,56 @@ class BotPlayer(Player):
 
         for tower in towers:
             if tower.type == TowerType.SOLAR_FARM:
+                if num_towers <= target:
+                    break
                 # Add farm spot into farm_tiles
                 self.farm_tiles.add((tower.x, tower.y))
                 rc.sell_tower(tower.id)
                 num_towers -= 1
-                if num_towers <= target:
-                    break
+
+    def get_strike_mult(self):
+        """
+        Attempt to calculate the ratio of extra times a debris can be hit for single target
+        on a windy map where debris leaves and enters the range of the tower
+        """
+        # tile = np.unravel_index(np.argmax(self.base_gunship_tiles), self.base_gunship_tiles.shape)
+        # tower_x, tower_y = int(tile[0]), int(tile[1])
+        gunship_strike_mult = []
+        bomber_strike_mult = []
+        for tower_x in range(self.map.width):
+            for tower_y in range(self.map.height):
+                if not self.map.is_space(tower_x, tower_y):
+                    continue
+                since_in_range = 100
+                temp_mult = 0
+                for tile in self.map.path:
+                    x, y = tile
+                    since_in_range += 1
+                    if (x - tower_x)**2 + (y - tower_y)**2 <= TowerType.GUNSHIP.range:
+                        if since_in_range >= TowerType.GUNSHIP.cooldown:
+                            temp_mult += 1
+                            since_in_range = 0
+                # temp_mult *= TowerType.GUNSHIP.cooldown / self.base_gunship_tiles[tower_x, tower_y]
+                # if temp_mult > gunship_strike_mult:
+                gunship_strike_mult.append(temp_mult)
+        
+                since_in_range = 100
+                temp_mult = 0
+                for tile in self.map.path:
+                    x, y = tile
+                    since_in_range += 1
+                    if (x - tower_x)**2 + (y - tower_y)**2 <= TowerType.BOMBER.range:
+                        if since_in_range >= TowerType.BOMBER.cooldown:
+                            temp_mult += 1
+                            since_in_range = 0
+                # if temp_mult > bomber_strike_mult:
+                bomber_strike_mult.append(temp_mult)
+
+        gunship_strike_mult = np.average(np.sort(gunship_strike_mult)[-10:])
+        bomber_strike_mult = np.average(np.sort(bomber_strike_mult)[-10:])
+        return (gunship_strike_mult, bomber_strike_mult)
+
+
 
     def check_offense_power(self, num_farms, num_enemy_farms, rc):
         towers = rc.get_towers(rc.get_enemy_team())
@@ -262,35 +321,52 @@ class BotPlayer(Player):
                 tb += self.base_bomber_tiles[tower.x, tower.y]
                 nbombs += 1
 
-        self.desired_health = max(MINIMUM_HEALTH,
-                                    BOMBER_DAMAGE*np.ceil((BOMBER_DPS * tb)/BOMBER_DAMAGE * 1.1) + GAPFILL)
-        self.single_health = max(MINIMUM_HEALTH,
-                                    (BOMBER_DAMAGE*np.ceil((BOMBER_DPS * tb)/BOMBER_DAMAGE * 1.1) + 
-                                    GUNSHIP_DAMAGE*np.ceil((GUNSHIP_DPS * tg)/GUNSHIP_DAMAGE * 1.2)) + GAPFILL)
+        self.desired_health = int(max(MINIMUM_HEALTH,
+                                    BOMBER_DAMAGE*np.ceil((BOMBER_DPS * tb)/BOMBER_DAMAGE * 1.2) + GAPFILL))
+        # self.single_health = max(MINIMUM_HEALTH,
+        #                             (BOMBER_DAMAGE*np.ceil(self.bomber_strike_mult) + 
+        #                             GUNSHIP_DAMAGE*np.ceil(self.gunship_strike_mult)) + GAPFILL)
 
         # Calculate the cheaper option
-        cluster_cost = rc.get_debris_cost(1, self.desired_health) * CLUSTER_SIZE
-        single_cost = rc.get_debris_cost(1, self.single_health)
+        # single_cost = rc.get_debris_cost(1, self.single_health)
+        # single_damage_per_cost = self.single_health / single_cost
+
         # How many farms are we willing to sell? Up to enemy farms? Unless hail mary...
         total_value = rc.get_balance(rc.get_ally_team())
-        if num_farms > num_enemy_farms:
-            total_value += (num_farms - num_enemy_farms) * 0.8 * TowerType.SOLAR_FARM.cost
-
-        if total_value >= single_cost and (single_cost / self.single_health < cluster_cost / (0.5* CLUSTER_SIZE * self.desired_health)):
-            # Assumes about 50% get through
-            self.sending_health = self.single_health
-            self.sending = 1
-            if num_farms > num_enemy_farms:
-                self.sell_farms(num_enemy_farms, rc)
-            self.mode = BotMode.ATTACKING
-            print("switch to attacking - sending single", self.sending_health, tg, tb)
-        elif total_value >= cluster_cost:
+        total_value += self.get_total_value(rc) * 0.8
+        cluster_cost = rc.get_debris_cost(1, self.desired_health)
+        cluster_damage_per_cost = 0.5 * self.desired_health / cluster_cost
+        if (cluster_damage_per_cost*total_value >= rc.get_health(rc.get_enemy_team())):
             self.sending_health = self.desired_health
-            self.sending = CLUSTER_SIZE
-            if num_farms > num_enemy_farms:
-                self.sell_farms(num_enemy_farms, rc)
+            self.sending = int(total_value / cluster_cost)
+            self.sell_all(rc)
             self.mode = BotMode.ATTACKING
-            print("switch to attacking - sending cluster", self.sending_health)
+            # print("sell everything - sending cluster ", self.sending_health)
+        else:
+            # Normal assault
+            total_value = rc.get_balance(rc.get_ally_team())
+            if num_farms > num_enemy_farms:
+                total_value += (num_farms - num_enemy_farms) * 0.8 * TowerType.SOLAR_FARM.cost
+            if (total_value >= cluster_cost * CLUSTER_SIZE
+                and CLUSTER_SIZE * 0.5 * self.desired_health >= 1250):
+                self.sending_health = int(self.desired_health)
+                self.sending = CLUSTER_SIZE
+                if num_farms > num_enemy_farms:
+                    self.sell_farms(num_enemy_farms, rc)
+                self.mode = BotMode.ATTACKING
+                # print("switch to attacking - sending cluster", self.sending_health)
+
+        # if (total_value >= single_cost 
+        #     and single_damage_per_cost > cluster_damage_per_cost 
+        #     and single_damage_per_cost*total_value >= 1000):
+        #     # Assumes about 50% get through
+        #     self.sending_health = int(self.single_health)
+        #     self.sending = int(total_value / single_cost)
+        #     if num_farms > num_enemy_farms:
+        #         self.sell_farms(num_enemy_farms, rc)
+        #     self.mode = BotMode.ATTACKING
+        #     print("switch to attacking - sending single", self.sending_health, tg, tb, single_damage_per_cost*total_value)
+        # print("attacking", cluster_damage_per_cost*total_value)
     
     def get_defense_power(self, rc: RobotController):
         towers = rc.get_towers(rc.get_ally_team())
@@ -315,11 +391,12 @@ class BotPlayer(Player):
         debris_life = 0
         for debris in all_debris:
             # Sample stuff in front
-            if debris.progress <= 15:
+            if ((debris.progress < 15 and debris.total_cooldown <= 2)
+                or (debris.progress >= self.map.path_length - 15 and debris.total_cooldown > 2)):
                 # Remove 50% bomber damage from health
                 debris_life += max(0, (debris.health / debris.total_cooldown) - cluster_health * 0.9)
         debris_life *= self.map.path_length / 15
-
+        # print("defend power", (cluster_health, single_health, debris_life))
         return (cluster_health, single_health, debris_life)
         
 
@@ -331,34 +408,37 @@ class BotPlayer(Player):
                 self.sending -= 1
         if self.sending == 0:
             # self.offense_mode = False
-            print("switch to farming")
+            # print("switch to farming")
             self.mode = BotMode.FARMING
 
     def do_defense_strat(self, rc: RobotController):
         towers = rc.get_towers(rc.get_ally_team())
+        tg = 0
         nguns = 0
+        tb = 0
         nbombs = 0
         # for tower in towers:
             # if tower.type == TowerType.REINFORCER:
         for tower in towers:
             if tower.type == TowerType.GUNSHIP:
+                tg += self.base_gunship_tiles[tower.x, tower.y]
                 nguns += 1
             elif tower.type == TowerType.BOMBER:
+                tb += self.base_bomber_tiles[tower.x, tower.y]
                 nbombs += 1
         
-        if nbombs / nguns < self.bomb_rate / self.gun_rate:
-            if rc.get_balance(rc.get_ally_team()) >= TowerType.BOMBER.cost:
-                bomber_x, bomber_y = self.optimal_tower(self.bomber_tiles, rc)
-                bomber_x, bomber_y = int(bomber_x), int(bomber_y)
-                if rc.can_build_tower(TowerType.BOMBER, bomber_x, bomber_y):
-                    rc.build_tower(TowerType.BOMBER, bomber_x, bomber_y)
-        else:
+        if tb * self.gun_rate * 4 >= self.bomb_rate * tg:
             if rc.get_balance(rc.get_ally_team()) >= TowerType.GUNSHIP.cost:
                 gunship_x, gunship_y = self.optimal_tower(self.gunship_tiles, rc)
                 gunship_x, gunship_y = int(gunship_x), int(gunship_y)
                 if rc.can_build_tower(TowerType.GUNSHIP, gunship_x, gunship_y):
                     rc.build_tower(TowerType.GUNSHIP, gunship_x, gunship_y)
-
+        else:
+            if rc.get_balance(rc.get_ally_team()) >= TowerType.BOMBER.cost:
+                bomber_x, bomber_y = self.optimal_tower(self.bomber_tiles, rc)
+                bomber_x, bomber_y = int(bomber_x), int(bomber_y)
+                if rc.can_build_tower(TowerType.BOMBER, bomber_x, bomber_y):
+                    rc.build_tower(TowerType.BOMBER, bomber_x, bomber_y)
 
     def do_farming_strat(self, rc: RobotController):
         if rc.get_balance(rc.get_ally_team()) >= TowerType.SOLAR_FARM.cost:
@@ -380,13 +460,14 @@ class BotPlayer(Player):
             # Debris analysis
             cluster_health, single_health, debris_life = self.get_defense_power(rc)
             if debris_life > single_health:
-                print("switch to defending")
+                # print("switch to defending 1")
                 self.mode = BotMode.DEFENDING
-            if num_farms * TowerType.SOLAR_FARM.cost >= enemy_value and cluster_health < 30 * np.sqrt(1 + 0.2*num_enemy_farms):
+            # if cluster_health < 24 * np.sqrt(1 + 0.2*num_enemy_farms):
                 # Source is that I made it up 
-                print("switch to defending")
-                self.mode = BotMode.DEFENDING        
-            if self.mode == BotMode.FARMING:
+                # if num_farms * TowerType.SOLAR_FARM.cost >= enemy_value:
+                    # print("switch to defending 2")
+                    # self.mode = BotMode.DEFENDING
+            elif self.mode == BotMode.FARMING:
                 self.check_offense_power(num_farms, num_enemy_farms, rc)
         # Defend if we have more farm than enemies (more farm should mean less defense)
         # if num_farms >= num_enemy_farms + 1:
@@ -397,29 +478,29 @@ class BotPlayer(Player):
     def play_turn(self, rc: RobotController):
         if rc.get_turn() == 1:
             gunship_tiles, bomber_tiles = num_tiles_in_range(self.map)
-            print("Gunship:")
-            print(gunship_tiles)
-            print("Bomber:")
-            print(bomber_tiles)
+            # print("Gunship:")
+            # print(gunship_tiles)
+            # print("Bomber:")
+            # print(bomber_tiles)
             reinf_gunship_tiles = reinf_value(gunship_tiles, NUM_TOWERS_PER_REINF, self.map)
             reinf_bomber_tiles = reinf_value(bomber_tiles, NUM_TOWERS_PER_REINF, self.map)
-            print("Reinforcement at 1-to-1 ratio:")
+            # print("Reinforcement at 1-to-1 ratio:")
             self.reinf_tiles = (self.gun_rate*reinf_gunship_tiles + self.bomb_rate*reinf_bomber_tiles) / self.ratio_sum
-            print(self.reinf_tiles)
+            # print(self.reinf_tiles)
 
             # Init the starting farm location
             self.init_farm_cluster(rc)
 
         if self.mode == BotMode.STARTING:
-            if rc.get_balance(rc.get_ally_team()) >= TowerType.GUNSHIP.cost:
-                gunship_x, gunship_y = self.optimal_tower(self.gunship_tiles, rc)
-                gunship_x, gunship_y = int(gunship_x), int(gunship_y)
-                if rc.can_build_tower(TowerType.GUNSHIP, gunship_x, gunship_y):
-                    rc.build_tower(TowerType.GUNSHIP, gunship_x, gunship_y)
-                    self.num_towers += 1
+            # if rc.get_balance(rc.get_ally_team()) >= TowerType.GUNSHIP.cost:
+                # gunship_x, gunship_y = self.optimal_tower(self.gunship_tiles, rc)
+                # gunship_x, gunship_y = int(gunship_x), int(gunship_y)
+                # if rc.can_build_tower(TowerType.GUNSHIP, gunship_x, gunship_y):
+                    # rc.build_tower(TowerType.GUNSHIP, gunship_x, gunship_y)
+                    # self.num_towers += 1
             
-                    if self.num_towers >= 5:
-                        print("switch to farming")
+                    # if self.num_towers >= 5:
+                        # print("switch to farming")
                         self.mode = BotMode.FARMING
             
         # When to build farms?
@@ -440,10 +521,10 @@ class BotPlayer(Player):
             if rc.get_turn() % 5 == 0: # mod 5 for less computation
                 cluster_health, single_health, debris_life = self.get_defense_power(rc)
                 if debris_life <= single_health:
-                    if num_farms * TowerType.SOLAR_FARM.cost < enemy_value and cluster_health >= 30 * np.sqrt(1 + 0.2*num_enemy_farms):
-                        self.mode = BotMode.FARMING
-                else:
-                    self.sell_farms(num_enemy_farms + 1, rc)
+                    # if num_farms * TowerType.SOLAR_FARM.cost < enemy_value or cluster_health >= 24 * np.sqrt(1 + 0.2*num_enemy_farms):
+                    self.mode = BotMode.FARMING
+                elif debris_life > single_health * 1.2:
+                    self.sell_farms(num_enemy_farms, rc)
         
         if self.mode == BotMode.ATTACKING:
             self.do_offense_strat(rc)
