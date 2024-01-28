@@ -40,7 +40,7 @@ def arena_builder(player_paths):
         in player_combinations
     ]
 
-    map(execute_game_and_output, enumerate(games))
+    return list(map(execute_game_and_output, enumerate(games)))
 
 
 def execute_game_and_output(game_tuple):
