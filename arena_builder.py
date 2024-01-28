@@ -30,28 +30,28 @@ def get_player_name_and_path(fstr):
     return (os.path.basename(fstr).split(".")[0], fstr)
 
 def arena_builder(player_paths):
-#    map_paths: list[str] = ["maps/three_disjoint_paths.awap24m"]
-#    map_paths += ["maps/temple.awap24m"]
-    map_paths = ["maps/hilbert.awap24m"]
-#    map_paths += [ "maps/squig.awap24m" ]
-#    map_paths += [ "maps/simple_map1.awap24m"]
+    map_paths: list[str] = ["maps/three_disjoint_paths.awap24m"]
+    map_paths += ["maps/temple.awap24m"]
+#    map_paths += ["maps/hilbert.awap24m"]
+    map_paths += [ "maps/squig.awap24m" ]
+    map_paths += [ "maps/simple_map1.awap24m" ]
  
     maps = [Map(mpath)for mpath in map_paths]
     player_combinations = [
         (get_player_name_and_path(ppath1), get_player_name_and_path(ppath2), map_inst) for ((ppath1, ppath2), map_inst) in itertools.product(itertools.combinations_with_replacement(player_paths, 2), maps) ]
-    print(len(player_combinations))
 
-    working_opps = ["defense_farmer", "cane_farmer", "azazel", "balthazar_farmer"]
-    filtered_player_combos = list(filter(lambda e: e[1][1][0] == 'dingo_farmer' or e[1][0][0] == 'dingo_farmer', enumerate(player_combinations)))
-    filtered_opponents_that_work = list(filter(lambda x: x[1][0][0] not in working_opps or x[1][1][0] not in working_opps, filtered_player_combos))
+    working_opps = [] # ["defense_farmer", "cane_farmer", "azazel", "balthazar_farmer", "defense_bot"]
+    filtered_player_combos = list(filter(lambda e: not(e[1][1][0] == 'dingo_farmer' or e[1][0][0] == 'dingo_farmer'), enumerate(player_combinations)))
+    filtered_opponents_that_work = list(filter(lambda x: (x[1][0][0] != 'dingo_farmer' and x[1][0][0] not in working_opps) or (x[1][1][0] != 'dingo_farmer' and x[1][1][0] not in working_opps), filtered_player_combos))
+    print(len(filtered_opponents_that_work))
     with Pool(12) as p:
         return p.map(execute_game_and_output, filtered_opponents_that_work)
 
 
 def execute_game_and_output(player_combination):
-    (i, ((p1_name, p1), (p2_name, p2), map_inst)) = player_combination
-    p1 = make_player(p1, map_inst)
-    p2 = make_player(p2, map_inst)
+    (i, ((p1_name, p1_path), (p2_name, p2_path), map_inst)) = player_combination
+    p1 = make_player(p1_path, map_inst)
+    p2 = make_player(p2_path, map_inst)
     game = GameExt(p1_name, p1, p2_name, p2, map_inst)
     print(f"Match {i+1}: {p1_name} vs. {p2_name}", end='')
     winner = game.run_game()
