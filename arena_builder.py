@@ -31,22 +31,23 @@ def get_player_name_and_path(fstr):
     return (os.path.basename(fstr).split(".")[0], fstr)
 
 def arena_builder(player_paths):
-#    map_paths: list[str] = ["maps/three_disjoint_paths.awap24m"]
-#    map_paths += ["maps/temple.awap24m"]
-    map_paths = ["maps/hilbert.awap24m"]
-#    map_paths += [ "maps/squig.awap24m" ]
-#    map_paths += [ "maps/simple_map1.awap24m" ]
+    map_paths: list[str] = ["maps/three_disjoint_paths.awap24m"]
+    map_paths += ["maps/temple.awap24m"]
+    map_paths += ["maps/hilbert.awap24m"]
+    map_paths += [ "maps/squig.awap24m" ]
+    map_paths += [ "maps/simple_map1.awap24m" ]
 
     maps = [Map(mpath)for mpath in map_paths]
     player_combinations = [
         (get_player_name_and_path(ppath1), get_player_name_and_path(ppath2), map_inst) for ((ppath1, ppath2), map_inst) in itertools.product(itertools.combinations_with_replacement(player_paths, 2), maps) ]
 
-    working_opps = ["defense_farmer", "cane_farmer", "balthazar_farmer", "defense_bot", "dingo_farmer"]
-    filtered_player_combos = list(filter(lambda e: e[1][1][0] == 'azazel' or e[1][0][0] == 'azazel', enumerate(player_combinations)))
-    filtered_opponents_that_work = list(filter(lambda x: (x[1][0][0] != 'azazel' and x[1][0][0] not in working_opps) or (x[1][1][0] != 'azazel' and x[1][1][0] not in working_opps), filtered_player_combos))
-    print(len(filtered_opponents_that_work))
+    working_opps = [] #["defense_farmer", "cane_farmer", "balthazar_farmer", "defense_bot", "dingo_farmer"]
+    filtered_player_combos = list(filter(lambda e: True, enumerate(player_combinations)))
+    filtered_opponents_that_work = list(filter(lambda x: True, filtered_player_combos))
+    no_against_self = list(filter(lambda x: x[1][0][0] != x[1][1][0], filtered_opponents_that_work))
+    print(len(no_against_self))
     with Pool(12) as p:
-        return p.map(execute_game_and_output, filtered_opponents_that_work)
+        return p.map(execute_game_and_output, no_against_self)
 
 
 def execute_game_and_output(player_combination):
@@ -61,7 +62,7 @@ def execute_game_and_output(player_combination):
     return {"player1": p1_name, "player2": p2_name, "winner": winner, "turns": game.gs.turn }
 
 def main():
-    player_paths = ["bots/azazel.py", "bots/balthazar_farmer.py", "bots/defense_bot.py", "bots/defense_bomb.py", "bots/dingo_farmer.py", "bots/defense_farmer.py"]
+    player_paths = ["bots/azazel.py", "bots/balthazar_farmer.py", "bots/defense_bot.py", "bots/defense_bomb.py", "bots/dingo_farmer_fixhp.py", "bots/defense_farmer.py", "bots/dingo_defender.py"]
     results = arena_builder(player_paths)
 
     player_names = [os.path.basename(p_path).split(".")[0] for p_path in player_paths]

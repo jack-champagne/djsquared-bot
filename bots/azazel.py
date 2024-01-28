@@ -70,12 +70,12 @@ class BotPlayer(Player):
                     tb += self.bomber_tiles[tower.x, tower.y]
                     nbombs += 1
 
-            self.desired_health = max(MINIMUM_HEALTH,
-                                      BOMBER_DAMAGE*np.ceil((BOMBER_DPS * tb)/BOMBER_DAMAGE) + GAPFILL)
+            self.desired_health = int(max(MINIMUM_HEALTH,
+                                      BOMBER_DAMAGE*np.ceil((BOMBER_DPS * tb)/BOMBER_DAMAGE) + GAPFILL))
             self.sending = self.cluster_size
 
         if self.sending > 0:
-            if rc.can_send_debris(1, self.desired_health) and rc.get_balance(rc.get_ally_team()) >= rc.get_debris_cost(1, self.desired_health) * self.sending:
+            if rc.get_balance(rc.get_ally_team()) >= rc.get_debris_cost(1, self.desired_health) * self.sending:
                 rc.send_debris(1, self.desired_health)
                 self.sending -= 1
 
