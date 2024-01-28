@@ -173,7 +173,8 @@ class BotPlayer(Player):
             total_val = rc.get_balance(rc.get_ally_team()) + self.num_farms * 0.8 * TowerType.SOLAR_FARM.cost
             if total_val >= rc.get_debris_cost(1, self.desired_health) * self.sending:
                 self.sell_farms(rc)
-                rc.send_debris(1, self.desired_health)
+                if rc.can_send_debris(1, self.desired_health):
+                    rc.send_debris(1, self.desired_health)
                 self.sending -= 1
 
                 if self.sending == 0:
