@@ -30,7 +30,7 @@ def arena_builder(player_paths):
     
     maps = [Map(mpath)for mpath in map_paths]
     player_combinations = [
-        (make_player(ppath1, map_inst), make_player(ppath2, map_inst), map_inst) for ((ppath1, ppath2), map_inst) in itertools.product(itertools.combinations_with_replacement(player_paths, 2), maps) ]
+        (make_player(ppath1, map_inst), make_player(ppath2, map_inst), map_inst) for ((ppath1, ppath2), map_inst) in itertools.product(itertools.combinations(player_paths, 2), maps) ]
     print(len(player_combinations))
 
     games = [ 
@@ -49,7 +49,7 @@ def arena_builder(player_paths):
     return results
 
 def main():
-    player_paths = ["bots/azazel.py", "bots/balthazar_farmer.py", "bots/defense_bot.py"]
+    player_paths = ["bots/azazel.py", "bots/balthazar_farmer.py", "bots/defense_bot.py", "bots/defense_bomb.py"]
     results = arena_builder(player_paths)
 
     player_names = [os.path.basename(p_path).split(".")[0] for p_path in player_paths]
