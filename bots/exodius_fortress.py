@@ -359,7 +359,7 @@ class BotPlayer(Player):
             cluster_damage_per_cost = 0.5 * self.desired_health / cluster_cost
         total_value = rc.get_balance(rc.get_ally_team())
         total_value += self.get_total_value(rc) * 0.8
-        overkill = max(0, rc.get_turn() - 1500) / 2
+        overkill = max(0, rc.get_turn() - 1500)
         if (cluster_damage_per_cost * cluster_cost * int(total_value / cluster_cost) >= rc.get_health(rc.get_enemy_team()) + overkill
             and cluster_damage_per_cost * cluster_cost * int(total_value / cluster_cost) >= 500):
             self.sending_health = self.desired_health
