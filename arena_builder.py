@@ -22,29 +22,30 @@ def import_file(module_name, file_path):
     sys.modules[module_name] = module
     return module
 
-def make_player(fpath: str, map_path: Map) -> (str, Player):
+def make_player(fpath: str, map_inst: Map) -> (str, Player):
     player_name = os.path.basename(fpath).split(".")[0]
-    return (player_name, import_file(player_name, fpath).BotPlayer(copy.deepcopy(map_path)))
+    return import_file(player_name, fpath).BotPlayer(copy.deepcopy(map_inst))
+
+def get_player_name_and_path(fstr):
+    return (os.path.basename(fstr).split(".")[0], fstr)
 
 def arena_builder(player_paths):
     map_paths: list[str] = ["maps/biki_bott.awap24m", "maps/line.awap24m", "maps/three_disjoint_paths.awap24m"]
     
     maps = [Map(mpath)for mpath in map_paths]
     player_combinations = [
-        (make_player(ppath1, map_inst), make_player(ppath2, map_inst), map_inst) for ((ppath1, ppath2), map_inst) in itertools.product(itertools.combinations_with_replacement(player_paths, 2), maps) ]
+        (get_player_name_and_path(ppath1), get_player_name_and_path(ppath2), map_inst) for ((ppath1, ppath2), map_inst) in itertools.product(itertools.combinations_with_replacement(player_paths, 2), maps) ]
     print(len(player_combinations))
 
-    games = [ 
-        (p1_name, p2_name, GameExt(p1_name, p1, p2_name, p2, map_inst)) 
-        for ((p1_name, p1), (p2_name, p2), map_inst) 
-        in player_combinations
-    ]
-
-    return list(map(execute_game_and_output, enumerate(games)))
+    with Pool(12) as p:
+        return p.map(execute_game_and_output, enumerate(player_combinations))
 
 
-def execute_game_and_output(game_tuple):
-    (i ,(p1_name, p2_name, game)) = game_tuple
+def execute_game_and_output(player_combination):
+    (i, ((p1_name, p1), (p2_name, p2), map_inst)) = player_combination
+    p1 = make_player(p1, map_inst)
+    p2 = make_player(p2, map_inst)
+    game = GameExt(p1_name, p1, p2_name, p2, map_inst)
     print(f"Match {i+1}: {p1_name} vs. {p2_name}", end='')
     winner = game.run_game()
     print(f" - winner: {'p1:' + p1_name if winner == Team.BLUE else 'p2:' + p2_name}")
