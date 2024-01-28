@@ -36,7 +36,7 @@ def num_tiles_in_range(map: Map):
 
     return (gunship_tiles, bomber_tiles)
 
-MINIMUM_HEALTH = 26 # Enough to survive a single gunshot
+MINIMUM_HEALTH = 50 # Enough to survive a single gunshot
 GAPFILL = 7
 CLUSTER_SIZE = 20
 
