@@ -41,8 +41,9 @@ def arena_builder(player_paths):
 
     results = []
     for (i ,(p1_name, p2_name, game)) in enumerate(games):
-        print(f"Match {i+1}: {p1_name} vs. {p2_name}")
+        print(f"Match {i+1}: {p1_name} vs. {p2_name}", end='')
         winner = game.run_game()
+        print(f"- winner: {p1_name if winner == Team.BLUE else p2_name}")
         results.append({"player1": p1_name, "player2": p2_name, "winner": winner, "turns": game.gs.turn })
         del(game)
     return results
@@ -54,7 +55,6 @@ def main():
     player_names = [os.path.basename(p_path).split(".")[0] for p_path in player_paths]
 
     print(f"ordering: {[ e for e in enumerate(player_names)]})")
-
     
     victory_matrix = np.zeros([len(player_names), len(player_names)])
     for result in results:
