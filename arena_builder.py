@@ -5,6 +5,7 @@ from src.player import Player
 from src.game import Game
 from src.game_ext import GameExt
 from src.map import Map
+from multiprocessing import Pool
 import importlib.util
 import argparse
 import json
@@ -39,14 +40,16 @@ def arena_builder(player_paths):
         in player_combinations
     ]
 
-    results = []
-    for (i ,(p1_name, p2_name, game)) in enumerate(games):
-        print(f"Match {i+1}: {p1_name} vs. {p2_name}", end='')
-        winner = game.run_game()
-        print(f"- winner: {'p1:' + p1_name if winner == Team.BLUE else 'p2:' + p2_name}")
-        results.append({"player1": p1_name, "player2": p2_name, "winner": winner, "turns": game.gs.turn })
-        del(game)
-    return results
+    with Pool(12) as p:
+        p.map(execute_game_and_output, enumerate(games))
+
+
+def execute_game_and_output(game_tuple):
+    (i ,(p1_name, p2_name, game)) = game_tuple
+    print(f"Match {i+1}: {p1_name} vs. {p2_name}", end='')
+    winner = game.run_game()
+    print(f" - winner: {'p1:' + p1_name if winner == Team.BLUE else 'p2:' + p2_name}")
+    return {"player1": p1_name, "player2": p2_name, "winner": winner, "turns": game.gs.turn }
 
 def main():
     player_paths = ["bots/azazel.py", "bots/balthazar_farmer.py", "bots/defense_bot.py", "bots/defense_bomb.py", "bots/cane_farmer.py"]
