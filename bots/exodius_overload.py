@@ -428,7 +428,7 @@ class BotPlayer(Player):
         if self.sending > 0:
             if rc.get_balance(rc.get_ally_team()) < rc.get_debris_cost(1, self.sending_health):
                 # Sell farm
-                self.sell_farms(self.get_num_farms() - 1, rc)
+                self.sell_farms(self.get_num_farms(rc) - 1, rc)
             if rc.get_balance(rc.get_ally_team()) >= rc.get_debris_cost(1, self.sending_health):   
                 rc.send_debris(1, self.sending_health)
                 self.sending -= 1

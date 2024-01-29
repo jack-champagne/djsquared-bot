@@ -38,7 +38,7 @@ def arena_builder(player_paths):
     map_paths += ["maps/hilbert.awap24m"]
     map_paths += [ "maps/squig.awap24m" ]
     map_paths += [ "maps/biki_bott.awap24m" ]
-    # map_paths += [ "maps/simple_map1.awap24m" ]
+    map_paths += [ "maps/simple_map1.awap24m" ]
 
     maps = [Map(mpath)for mpath in map_paths]
     player_combinations = [
@@ -65,7 +65,7 @@ def execute_game_and_output(player_combination):
     return {"player1": p1_name, "player2": p2_name, "winner": winner, "turns": game.gs.turn }
 
 def main():
-    player_paths = ["bots/azazel.py", "bots/azazel_farmer.py", "bots/balthazar_farmer.py", "bots/defense_bot.py", "bots/defense_bomb.py", "bots/dingo_farmer_fixhp.py", "bots/defense_farmer.py", "bots/dingo_defender.py", "bots/one_punch_bot.py"]
+    player_paths = ["bots/azazel.py", "bots/azazel_farmer.py", "bots/balthazar_farmer.py", "bots/defense_bot.py", "bots/defense_bomb.py", "bots/dingo_farmer_fixhp.py", "bots/defense_farmer.py", "bots/dingo_defender.py", "bots/exodius_overload.py", "bots/exodius_horizon.py", "bots/exodius_fortress.py"]
     results = arena_builder(player_paths)
 
     player_names = [os.path.basename(p_path).split(".")[0] for p_path in player_paths]
