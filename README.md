@@ -1,5 +1,9 @@
 # AWAP 2024 Game Engine
 
+# Team djsquared's 1st place submission
+Please see `bots/exodius_fortress.py` for the final version of the bot used in bracket matches.
+All bots were developed exclusively by team djsquared and are MIT licensed - please see license in bots directory. 
+
 ## Installation
 `pip install compress_json pygame`
 
@@ -41,3 +45,6 @@ Note, this only works when running locally - outside of a Codespace or browser d
 To use the CLI on a remote or local device, run:
 
 `python replay_game_cli.py <filename>.awap24r`
+
+
+# 
